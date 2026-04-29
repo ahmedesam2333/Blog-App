@@ -31,7 +31,7 @@
 
 ## 🧠 Overview
 
-BlogWave is a content-driven blog platform where users can publish articles, engage with posts through comments and likes, and manage their own content. This repository contains the **full backend API** built with Node.js, Express.js, and MySQL via Sequelize ORM — featuring a security-first, layered architecture.
+Blog App is a content-driven blog platform where users can publish articles, engage with posts through comments and likes, and manage their own content. This repository contains the **full backend API** built with Node.js, Express.js, and MySQL via Sequelize ORM — featuring a security-first, layered architecture.
 
 **Core concepts:**
 - Users register, verify their email via OTP, and get a personal profile
