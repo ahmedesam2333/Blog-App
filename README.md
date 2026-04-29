@@ -21,6 +21,7 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [Database Design](#%EF%B8%8F-database-design)
 - [Features](#-features)
 - [Project Structure](#%EF%B8%8F-project-structure)
 - [API Documentation](#-api-documentation)
@@ -39,6 +40,50 @@ BlogWave is a content-driven blog platform where users can publish articles, eng
 - Anyone can read posts; interactions (comments, likes) require authentication
 - Admins can moderate content and manage users
 - Image uploads supported for post covers and user avatars
+
+---
+
+## 🗃️ Database Design
+
+### Entity Relationship Diagram (ERD)
+
+<div align="center">
+  <a href="https://drive.google.com/file/d/1vc0QEbaS6BirYrWNvwwKIUpDNxVf8JWn/view?usp=sharing" target="_blank">
+    <img src="https://drive.google.com/uc?export=view&id=1vc0QEbaS6BirYrWNvwwKIUpDNxVf8JWn" alt="BlogWave ERD" width="80%"/>
+  </a>
+  <br/>
+  <sub>🔍 <a href="https://drive.google.com/file/d/1vc0QEbaS6BirYrWNvwwKIUpDNxVf8JWn/view?usp=sharing">Click to view full size</a></sub>
+</div>
+
+<br/>
+
+**Key relationships:**
+- A `User` can **create** many `Blog` posts — one-to-many (`1:M`)
+- `fullName` is a composite attribute — broken into `fName`, `mName`, `lName`
+- `Phone` is a multi-valued attribute — stored in a separate `User-Phone` table
+- `Age` is a derived attribute — calculated from `DOB`
+
+---
+
+### DB Mapping
+
+<div align="center">
+  <a href="https://drive.google.com/file/d/1hcegWRwvAltj3nGKgsL068BnytvRLah2/view?usp=sharing" target="_blank">
+    <img src="https://drive.google.com/uc?export=view&id=1hcegWRwvAltj3nGKgsL068BnytvRLah2" alt="BlogWave DB Mapping" width="80%"/>
+  </a>
+  <br/>
+  <sub>🔍 <a href="https://drive.google.com/file/d/1hcegWRwvAltj3nGKgsL068BnytvRLah2/view?usp=sharing">Click to view full size</a></sub>
+</div>
+
+<br/>
+
+**Tables:**
+
+| Table | Primary Key | Foreign Key | Description |
+|---|---|---|---|
+| `User` | `ID` | — | Stores all user account data |
+| `User-Phone` | `userId, phone` | `userId → User.ID` | Multi-valued phone numbers per user |
+| `Blog` | `ID` | `authorId → User.ID` | Blog posts created by users |
 
 ---
 
