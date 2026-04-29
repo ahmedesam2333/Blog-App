@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>📝 BlogWave App</h1>
+<h1>📝 Blog App</h1>
 <p><strong>Full-Featured Blog Platform — REST API Backend</strong></p>
 
 ![Status](https://img.shields.io/badge/Status-In_Progress-f59e0b?style=for-the-badge)
