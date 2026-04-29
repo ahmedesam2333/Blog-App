@@ -1,0 +1,24 @@
+{
+  "name": "blog-app",
+  "version": "1.0.0",
+  "description": "Blog App",
+  "homepage": "https://github.com/ahmedesam2333/Blog-App#readme",
+  "bugs": {
+    "url": "https://github.com/ahmedesam2333/Blog-App/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmedesam2333/Blog-App.git"
+  },
+  "license": "ISC",
+  "author": "Ahmed Essam",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "start:dev": "node --watch ./src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
