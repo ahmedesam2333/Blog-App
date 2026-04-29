@@ -1,14 +1,13 @@
 <div align="center">
 
-<h1>📝 Blog App</h1>
+<h1>📝 BlogWave App</h1>
 <p><strong>Full-Featured Blog Platform — REST API Backend</strong></p>
 
 ![Status](https://img.shields.io/badge/Status-In_Progress-f59e0b?style=for-the-badge)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Sequelize](https://img.shields.io/badge/Sequelize-52B0E7?style=for-the-badge&logo=sequelize&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![Sequelize](https://img.shields.io/badge/Sequelize-2D6A9F?style=for-the-badge&logo=sequelize&logoColor=white)
 
 <br/>
 
@@ -31,7 +30,7 @@
 
 ## 🧠 Overview
 
-Blog App is a content-driven blog platform where users can publish articles, engage with posts through comments and likes, and manage their own content. This repository contains the **full backend API** built with Node.js, Express.js, and MySQL via Sequelize ORM — featuring a security-first, layered architecture.
+BlogWave is a content-driven blog platform where users can publish articles, engage with posts through comments and likes, and manage their own content. This repository contains the **full backend API** built with Node.js, Express.js, and MySQL via Sequelize ORM — featuring a security-first, layered architecture.
 
 **Core concepts:**
 - Users register, verify their email via OTP, and get a personal profile
