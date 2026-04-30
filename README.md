@@ -39,8 +39,6 @@ BlogWave is a content-driven blog platform where users can publish articles, eng
 - Posts can be organized by categories and tags
 - Anyone can read posts; interactions (comments, likes) require authentication
 - Admins can moderate content and manage users
-- Image uploads supported for post covers and user avatars
-
 ---
 
 ## 🗃️ Database Design
@@ -95,105 +93,8 @@ BlogWave is a content-driven blog platform where users can publish articles, eng
 - [x] MySQL database connection via Sequelize
 - [x] Models & associations — User, Post, Comment, Category, Tag, Like
 - [x] Sign Up & Login endpoints
-- [x] Async error handler utility (`asyncHandler`)
 - [x] Global error handling middleware
-- [x] Uniform success/error API response structure (`response.js`)
 - [x] Environment variables setup (`dotenv`)
-
-<details>
-<summary><strong>🛠️ asyncHandler + successResponse + globalErrorHandling</strong> — <em>Click to see implementation</em></summary>
-
-<br/>
-
-```javascript
-export const asyncHandler = (fn) => {
-  return async (req, res, next) => {
-    await fn(req, res, next).catch((error) => {
-      error.cause = 500;
-      return next(error);
-    });
-  };
-};
-
-export const successResponse = ({
-  res,
-  message = "Done",
-  status = 200,
-  data,
-}) => {
-  return res.status(status).json({ message, data });
-};
-
-export const globalErrorHandling = (error, req, res, next) => {
-  return res
-    .status(error.cause || 400)
-    .json({ err_message: error.message, stack: error.stack });
-};
-```
-
-</details>
-
-- [x] DB Service layer — generalized Sequelize-agnostic data access methods
-
-<details>
-<summary><strong>🗄️ DB Service</strong> — <em>Click to see example</em></summary>
-
-<br/>
-
-```javascript
-export const findOne = async ({
-  model,
-  filter = {},
-  attributes,
-  include = [],
-} = {}) => {
-  return await model.findOne({ where: filter, attributes, include });
-};
-
-export const findById = async ({
-  model,
-  id,
-  attributes,
-  include = [],
-} = {}) => {
-  return await model.findByPk(id, { attributes, include });
-};
-
-export const create = async ({ model, data = {} } = {}) => {
-  return await model.create(data);
-};
-
-export const findByIdAndUpdate = async ({
-  model,
-  id,
-  updatedData = {},
-} = {}) => {
-  await model.update(updatedData, { where: { id } });
-  return await model.findByPk(id);
-};
-
-export const findAll = async ({
-  model,
-  filter = {},
-  attributes,
-  include = [],
-  limit,
-  offset,
-  order = [["createdAt", "DESC"]],
-} = {}) => {
-  return await model.findAndCountAll({
-    where: filter,
-    attributes,
-    include,
-    limit,
-    offset,
-    order,
-  });
-};
-```
-
-</details>
-
 - [x] Hashing — `bcrypt` implementation for passwords (`src/utils/security/hash.security.js`)
 
 <details>
@@ -204,14 +105,18 @@ export const findAll = async ({
 ```javascript
 import bcrypt from "bcryptjs";
 
-export const generateHash = async ({ plainText = "", salt = 12 }) => {
-  const hash = bcrypt.hashSync(plainText, parseInt(salt));
-  return hash;
+export const hashPassword = ({
+  plainText = "",
+  salt = process.env.SALT,
+} = {}) => {
+  return bcrypt.hashSync(plainText, parseInt(salt));
 };
 
-export const compareHash = async ({ plainText = "", hashedPassword = "" }) => {
-  const match = bcrypt.compareSync(plainText, hashedPassword);
-  return match;
+export const comparePassword = ({
+  password = "",
+  hashedPassword = "",
+} = {}) => {
+  return bcrypt.compareSync(password, hashedPassword);
 };
 ```
 
@@ -342,39 +247,10 @@ export const authentication = ({ tokenType = tokenTypeEnum.access } = {}) => {
 
 </details>
 
-- [x] Authorization middleware — role-based access control (`src/middleware/authorization.middleware.js`)
-
-<details>
-<summary><strong>🔐 Authorization Middleware</strong> — <em>Click to see implementation</em></summary>
-
-<br/>
-
-```javascript
-import { asyncHandler } from "../utils/response.js";
-
-export const authorization = (...roles) => {
-  return asyncHandler(async (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return next(new Error("Unauthorized — Insufficient permissions", { cause: 403 }));
-    }
-    return next();
-  });
-};
-```
-
-</details>
-
 ---
 
 ### 🔜 In Progress / Upcoming
 
-- [ ] OTP email verification (`nodemailer`)
-- [ ] Rate limiting per IP (`express-rate-limit`)
-- [ ] Helmet security headers
-- [ ] CORS configuration
-- [ ] Joi request validation on all routes
-- [ ] Multer file upload (post cover image & user avatar)
-- [ ] Cloudinary integration for image hosting
 - [ ] Create / update / delete posts
 - [ ] Categories & tags management
 - [ ] Comments — add, edit, delete, nested replies
@@ -403,8 +279,7 @@ BLOGWAVE-APP/
 │   │   │   ├── tag.model.js
 │   │   │   ├── like.model.js
 │   │   │   └── index.js              (associations + Sequelize init)
-│   │   ├── db.service.js             (findOne, findById, findAll, create, findByIdAndUpdate)
-│   │   └── connection.js
+│   │   └── db.connection.js
 │   ├── middleware/
 │   │   ├── authentication.middleware.js
 │   │   └── authorization.middleware.js
@@ -421,7 +296,6 @@ BLOGWAVE-APP/
 │   │   ├── user.controller.js
 │   │   └── user.routes.js
 │   └── utils/
-│   │   ├── response.js               (asyncHandler + success/error helpers + Global Error Handling)
 │   │   └── security/
 │   │       ├── hash.security.js      (bcrypt generateHash + compareHash)
 │   │       └── token.security.js     (JWT gen/verify tokens + decodeToken + generateLoginCredentials + role-aware signatures)
@@ -455,10 +329,6 @@ const router = express.Router();
 
 router.post("/signup", authController.signup);
 router.post("/login", authController.login);
-router.post("/verify-otp", authController.verifyOtp);
-router.post("/resend-otp", authController.resendOtp);
-router.post("/forgot-password", authController.forgotPassword);
-router.post("/reset-password", authController.resetPassword);
 
 export default router;
 ```
@@ -999,54 +869,6 @@ export default router;
 
 <details>
 <summary><code>DELETE</code> &nbsp; <strong>/comment/:id</strong> — Delete a comment &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-## ❤️ Likes — `/like` &nbsp; 🔒 *Protected*
-
-<details>
-<summary><code>POST</code> &nbsp; <strong>/like/post/:postId</strong> — Toggle like on a post &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-## 🗂️ Categories — `/category`
-
-<details>
-<summary><code>GET</code> &nbsp; <strong>/category</strong> — Get all categories</summary>
-
-<br/>
-
-**Response `200` — Success:**
-```json
-{
-  "message": "Done",
-  "data": {
-    "categories": [
-      { "id": 1, "name": "Technology", "postsCount": 34 },
-      { "id": 2, "name": "Backend", "postsCount": 18 }
-    ]
-  }
-}
-```
-
-</details>
-
----
-
-<details>
-<summary><code>POST</code> &nbsp; <strong>/category</strong> — Create a category &nbsp; 🔒 Admin only &nbsp; ⬜ <em>Not yet implemented</em></summary>
 
 <br/>
 
