@@ -124,131 +124,6 @@ export const comparePassword = ({
 
 </details>
 
-- [x] JWT — Role-aware token system with Bearer/Admin signature levels, `decodeToken`, and `generateLoginCredentials` (`src/utils/security/token.security.js`)
-
-<details>
-<summary><strong>🪙 JWT Tokens</strong> — <em>Click to see implementation</em></summary>
-
-<br/>
-
-```javascript
-import jwt from "jsonwebtoken";
-import { User } from "../../DB/models/index.js";
-import * as DBService from "../../DB/db.service.js";
-
-export const signatureLevelEnum = { bearer: "Bearer", admin: "Admin" };
-export const tokenTypeEnum = { access: "access", refresh: "refresh" };
-
-export const genAccessToken = async ({
-  payload = {},
-  signature = process.env.JWT_ACCESS_USER_KEY,
-  options = { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN },
-} = {}) => {
-  return jwt.sign(payload, signature, options);
-};
-
-export const genRefreshToken = async ({
-  payload = {},
-  signature = process.env.JWT_REFRESH_USER_KEY,
-  options = { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN },
-} = {}) => {
-  return jwt.sign(payload, signature, options);
-};
-
-export const verifyToken = async ({
-  token = "",
-  signature = process.env.JWT_REFRESH_USER_KEY,
-} = {}) => {
-  return jwt.verify(token, signature);
-};
-
-export const getSignatures = async ({
-  signatureLevel = signatureLevelEnum.bearer,
-} = {}) => {
-  let signatures = { accessSignature: undefined, refreshSignature: undefined };
-  switch (signatureLevel) {
-    case signatureLevelEnum.admin:
-      signatures.accessSignature = process.env.JWT_ACCESS_ADMIN_KEY;
-      signatures.refreshSignature = process.env.JWT_REFRESH_ADMIN_KEY;
-      break;
-    default:
-      signatures.accessSignature = process.env.JWT_ACCESS_USER_KEY;
-      signatures.refreshSignature = process.env.JWT_REFRESH_USER_KEY;
-  }
-  return signatures;
-};
-
-export const decodeToken = async ({
-  next,
-  authorization = "",
-  tokenType = tokenTypeEnum.access,
-} = {}) => {
-  const [Bearer, token] = authorization?.split(" ") || [];
-  if (!Bearer || !token)
-    return next(new Error("Missing-Token-Parts", { cause: 401 }));
-  let signatures = await getSignatures({ signatureLevel: Bearer });
-  const decoded = await verifyToken({
-    token,
-    signature:
-      tokenType === tokenTypeEnum.access
-        ? signatures.accessSignature
-        : signatures.refreshSignature,
-  });
-  if (!decoded?.id) return next(new Error("Invalid-Token", { cause: 400 }));
-  const user = await DBService.findById({ model: User, id: decoded.id });
-  if (!user) return next(new Error("User Not Found", { cause: 404 }));
-  return user;
-};
-
-export const generateLoginCredentials = async ({ user } = {}) => {
-  let signatures = await getSignatures({
-    signatureLevel:
-      user.role !== "user"
-        ? signatureLevelEnum.admin
-        : signatureLevelEnum.bearer,
-  });
-  const access_token = await genAccessToken({
-    payload: { id: user.id },
-    signature: signatures.accessSignature,
-  });
-  const refresh_token = await genRefreshToken({
-    payload: { id: user.id },
-    signature: signatures.refreshSignature,
-  });
-  return { access_token, refresh_token };
-};
-```
-
-</details>
-
-- [x] Authentication middleware — decodes Bearer/Admin token, supports access & refresh token types (`src/middleware/authentication.middleware.js`)
-
-<details>
-<summary><strong>🛡️ Authentication Middleware</strong> — <em>Click to see implementation</em></summary>
-
-<br/>
-
-```javascript
-import { asyncHandler } from "../utils/response.js";
-import {
-  decodeToken,
-  tokenTypeEnum,
-} from "../utils/security/token.security.js";
-
-export const authentication = ({ tokenType = tokenTypeEnum.access } = {}) => {
-  return asyncHandler(async (req, res, next) => {
-    req.user = await decodeToken({
-      next,
-      authorization: req.headers?.authorization,
-      tokenType,
-    });
-    return next();
-  });
-};
-```
-
-</details>
-
 ---
 
 ### 🔜 In Progress / Upcoming
@@ -288,12 +163,10 @@ BLOGWAVE-APP/
 │   ├── DB/
 │   │   ├── models/
 │   │   │   ├── user.model.js
-│   │   │   ├── post.model.js
+│   │   │   ├── blog.model.js
 │   │   │   ├── comment.model.js
 │   │   │   ├── category.model.js
-│   │   │   ├── tag.model.js
 │   │   │   ├── like.model.js
-│   │   │   └── index.js              (associations + Sequelize init)
 │   │   └── db.connection.js
 │   ├── middleware/
 │   │   ├── authentication.middleware.js
@@ -301,7 +174,6 @@ BLOGWAVE-APP/
 │   └── utils/
 │       └── security/
 │           ├── hash.security.js      (bcrypt generateHash + compareHash)
-│           └── token.security.js     (JWT gen/verify tokens + decodeToken + generateLoginCredentials + role-aware signatures)
 │   ├── app.controller.js             (main app setup / route mounting)
 │   └── index.js                      (entry point)
 ├── .gitignore
@@ -494,50 +366,6 @@ export const login = (req, res, next) => {
 
 ---
 
-<details>
-<summary><code>POST</code> &nbsp; <strong>/auth/verify-otp</strong> — Verify email with OTP &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add request body, success response, and error cases when implemented*
-
-</details>
-
----
-
-<details>
-<summary><code>POST</code> &nbsp; <strong>/auth/resend-otp</strong> — Resend OTP to email &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-<details>
-<summary><code>POST</code> &nbsp; <strong>/auth/forgot-password</strong> — Send password reset email &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-<details>
-<summary><code>POST</code> &nbsp; <strong>/auth/reset-password</strong> — Reset password using token &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
 ## 👤 User — `/user` &nbsp; 🔒 *Protected*
 
 <details>
@@ -548,18 +376,9 @@ export const login = (req, res, next) => {
 ```javascript
 import express from "express";
 import * as userController from "./user.controller.js";
-import { authentication } from "../middleware/authentication.middleware.js";
-import { tokenTypeEnum } from "../utils/security/token.security.js";
 const router = express.Router();
 
-router.get("/", authentication(), userController.getProfile);
-router.get(
-  "/refresh-token",
-  authentication({ tokenType: tokenTypeEnum.refresh }),
-  userController.getNewLoginCredentials
-);
-router.put("/", authentication(), userController.updateProfile);
-router.get("/:username", userController.getPublicProfile);
+router.get("/", userController.getAllUsers);
 
 export default router;
 ```
