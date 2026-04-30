@@ -7,6 +7,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![MySQL2](https://img.shields.io/badge/MySQL2-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![Sequelize](https://img.shields.io/badge/Sequelize-2D6A9F?style=for-the-badge&logo=sequelize&logoColor=white)
 
 <br/>
@@ -39,6 +40,7 @@ BlogWave is a content-driven blog platform where users can publish articles, eng
 - Posts can be organized by categories and tags
 - Anyone can read posts; interactions (comments, likes) require authentication
 - Admins can moderate content and manage users
+
 ---
 
 ## 🗃️ Database Design
@@ -267,9 +269,22 @@ export const authentication = ({ tokenType = tokenTypeEnum.access } = {}) => {
 ```
 BLOGWAVE-APP/
 ├── src/
-│   ├── auth/
-│   │   ├── auth.controller.js
-│   │   └── auth.routes.js
+│   ├── modules/
+│   │   ├── auth/
+│   │   │   ├── auth.controller.js
+│   │   │   └── auth.routes.js
+│   │   ├── post/
+│   │   │   ├── post.controller.js
+│   │   │   └── post.routes.js
+│   │   ├── comment/
+│   │   │   ├── comment.controller.js
+│   │   │   └── comment.routes.js
+│   │   ├── category/
+│   │   │   ├── category.controller.js
+│   │   │   └── category.routes.js
+│   │   └── user/
+│   │       ├── user.controller.js
+│   │       └── user.routes.js
 │   ├── DB/
 │   │   ├── models/
 │   │   │   ├── user.model.js
@@ -283,22 +298,10 @@ BLOGWAVE-APP/
 │   ├── middleware/
 │   │   ├── authentication.middleware.js
 │   │   └── authorization.middleware.js
-│   ├── post/
-│   │   ├── post.controller.js
-│   │   └── post.routes.js
-│   ├── comment/
-│   │   ├── comment.controller.js
-│   │   └── comment.routes.js
-│   ├── category/
-│   │   ├── category.controller.js
-│   │   └── category.routes.js
-│   ├── user/
-│   │   ├── user.controller.js
-│   │   └── user.routes.js
 │   └── utils/
-│   │   └── security/
-│   │       ├── hash.security.js      (bcrypt generateHash + compareHash)
-│   │       └── token.security.js     (JWT gen/verify tokens + decodeToken + generateLoginCredentials + role-aware signatures)
+│       └── security/
+│           ├── hash.security.js      (bcrypt generateHash + compareHash)
+│           └── token.security.js     (JWT gen/verify tokens + decodeToken + generateLoginCredentials + role-aware signatures)
 │   ├── app.controller.js             (main app setup / route mounting)
 │   └── index.js                      (entry point)
 ├── .gitignore
@@ -342,60 +345,70 @@ export default router;
 
 <br/>
 
+> 🔓 Public — no authentication required.
+
 **Request Body:**
 ```json
 {
-  "fullName": "Ahmed Essam",
-  "email": "a1@example.com",
-  "password": "StrongPass@123",
-  "gender": "male"
+  "firstName": "Ahmed",
+  "middleName": "Essam",
+  "lastName": "Hamdy",
+  "email": "a1@gmail.com",
+  "password": "123456"
 }
 ```
 
 **Response `201` — Success:**
 ```json
 {
-  "message": "User created successfully. Please verify your email.",
-  "data": {
-    "user": {
-      "id": 1,
-      "fullName": "Ahmed Essam",
-      "email": "a1@example.com",
-      "gender": "male",
-      "role": "user",
-      "isVerified": false
-    }
-  }
+  "message": "User Created Successfully"
 }
 ```
 
 **Response `409` — Email already exists:**
 ```json
-{ "err_message": "Email already exists" }
+{ "message": "Email Exist" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "error in sql query", "err": "<error details>" }
 ```
 
 <details>
-<summary><em>Controller code</em></summary>
+<summary><em>Controller code — MySQL2</em></summary>
 
 ```javascript
-export const signup = asyncHandler(async (req, res, next) => {
-  const { fullName, email, password, gender } = req.body;
-  if (await DBService.findOne({ model: User, filter: { email } })) {
-    return next(new Error("Email already exists", { cause: 409 }));
-  }
-  const hashedPassword = await generateHash({ plainText: password });
-  const user = await DBService.create({
-    model: User,
-    data: { fullName, email, password: hashedPassword, gender },
+export const signup = (req, res, next) => {
+  const { firstName, middleName, lastName, email, password } = req.body;
+
+  const existQuery = "SELECT * FROM users WHERE u_email = ?";
+  connection.execute(existQuery, [email], (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: "error in sql query", err });
+    }
+    if (data.length) {
+      return res.status(409).json({ message: "Email Exist" });
+    }
+
+    const hashedPassword = hashPassword({ plainText: password });
+
+    const insertQuery = `
+      INSERT INTO users (u_fname, u_mname, u_lname, u_email, u_password)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    connection.execute(
+      insertQuery,
+      [firstName, middleName, lastName, email, hashedPassword],
+      (err, data) => {
+        if (err) {
+          return res.status(500).json({ message: "error in sql query", err });
+        }
+        return res.status(201).json({ message: "User Created Successfully" });
+      }
+    );
   });
-  // TODO: send OTP email
-  return successResponse({
-    res,
-    message: "User created successfully. Please verify your email.",
-    status: 201,
-    data: { user },
-  });
-});
+};
 ```
 
 </details>
@@ -409,54 +422,70 @@ export const signup = asyncHandler(async (req, res, next) => {
 
 <br/>
 
+> 🔓 Public — no authentication required.
+
 **Request Body:**
 ```json
 {
-  "email": "a1@example.com",
-  "password": "StrongPass@123"
+  "email": "a1@gmail.com",
+  "password": "123456"
 }
 ```
 
-**Response `200` — Success** *(message adapts based on role)*:
+**Response `200` — Success:**
 ```json
 {
-  "message": "User Logged in successfully",
-  "data": {
-    "access_token": "<jwt_access_token>",
-    "refresh_token": "<jwt_refresh_token>"
+  "message": "User Logged In Successfully",
+  "user": {
+    "u_id": 1,
+    "u_fname": "Ahmed",
+    "u_mname": "Essam",
+    "u_lname": "Hamdy",
+    "u_email": "a1@gmail.com"
   }
 }
 ```
 
-**Response `403` — Email not verified:**
-```json
-{ "err_message": "Please verify your email before logging in" }
-```
-
 **Response `404` — Invalid credentials:**
 ```json
-{ "err_message": "Invalid email or password" }
+{ "message": "Invalid Email or Password" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "error in sql query", "err": "<error details>" }
 ```
 
 <details>
-<summary><em>Controller code</em></summary>
+<summary><em>Controller code — MySQL2</em></summary>
 
 ```javascript
-export const login = asyncHandler(async (req, res, next) => {
+export const login = (req, res, next) => {
   const { email, password } = req.body;
-  const user = await DBService.findOne({ model: User, filter: { email } });
-  if (!user) return next(new Error("Invalid email or password", { cause: 404 }));
-  const match = await compareHash({ plainText: password, hashedPassword: user.password });
-  if (!match) return next(new Error("Invalid email or password", { cause: 404 }));
-  if (!user.isVerified) return next(new Error("Please verify your email before logging in", { cause: 403 }));
-  const credentials = await generateLoginCredentials({ user });
-  return successResponse({
-    res,
-    status: 200,
-    message: `${user.role === "user" ? "User" : "Admin"} Logged in successfully`,
-    data: credentials,
+
+  const existQuery = "SELECT * FROM users WHERE u_email = ?";
+  connection.execute(existQuery, [email], (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: "error in sql query", err });
+    }
+    if (!data.length) {
+      return res.status(404).json({ message: "Invalid Email or Password" });
+    }
+
+    const matchPassword = comparePassword({
+      password: password,
+      hashedPassword: data[0].u_password,
+    });
+    if (!matchPassword) {
+      return res.status(404).json({ message: "Invalid Email or Password" });
+    }
+
+    return res.status(200).json({
+      message: "User Logged In Successfully",
+      user: data[0],
+    });
   });
-});
+};
 ```
 
 </details>
