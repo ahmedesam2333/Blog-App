@@ -4,11 +4,13 @@ import path from "node:path";
 import connectDB from "./DB/db.connection.js";
 import authRouter from "./modules/auth/auth.routes.js";
 import userRouter from "./modules/user/user.routes.js";
+import blogRouter from "./modules/blog/blog.routes.js";
 
 dotenv.config({
   path: path.join("./src/config/.env"),
 });
 
+//DB
 export const connection = connectDB();
 
 const bootstrap = async () => {
@@ -21,7 +23,8 @@ const bootstrap = async () => {
   });
 
   app.use("/auth", authRouter);
-  app.use("/users", userRouter);
+  app.use("/user", userRouter);
+  app.use("/blog", blogRouter);
 
   app.all("{/*dummy}", (req, res, next) => {
     res.status(404).json({ message: "Page No Found ❌" });
