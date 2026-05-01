@@ -8,11 +8,12 @@
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![MySQL2](https://img.shields.io/badge/MySQL2-00758F?style=for-the-badge&logo=mysql&logoColor=white)
+![Sequelize](https://img.shields.io/badge/Sequelize-2D6A9F?style=for-the-badge&logo=sequelize&logoColor=white)
 
 <br/>
 
-> A simple and clean backend system for a blog platform.  
-> Users can register, log in, and manage their profiles — built with Node.js, Express.js, and MySQL2.
+> A backend system for a blog platform where users can register, log in, manage their profiles, and create & manage their blog posts.  
+> Currently powered by MySQL2 with raw SQL queries — migrating to Sequelize ORM in the next phase.
 
 </div>
 
@@ -25,18 +26,20 @@
 - [Features](#-features)
 - [Project Structure](#%EF%B8%8F-project-structure)
 - [API Documentation](#-api-documentation)
-- [Author](#%E2%80%8D-author)
+- [Author](#-author)
 
 ---
 
 ## 🧠 Overview
 
-BlogWave is a simple blog platform where users can register, log in, and manage their profiles. This repository contains the **backend API** built with Node.js, Express.js, and MySQL using the MySQL2 driver for direct SQL queries.
+BlogWave is a blog platform where users can register, log in, manage their profiles, and create & manage their own blog posts. This repository contains the **backend API** built with Node.js, Express.js, and MySQL — currently using the MySQL2 driver for direct SQL queries, with a planned migration to **Sequelize ORM** in the next phase for cleaner model-based data access and associations.
 
 **Core concepts:**
-- Users register and log in with hashed passwords
-- Users can view, update, search, and delete profiles
-- Blog post management coming in the next phase
+- Users register and log in with bcrypt-hashed passwords
+- Users can view, search, update, and delete their profiles
+- Authenticated users can create blog posts and retrieve all blogs by a specific user
+- Relational schema with FK constraints — deleting a user cascades to their blogs
+- Sequelize ORM integration coming next for models, associations, and query abstraction
 
 ---
 
