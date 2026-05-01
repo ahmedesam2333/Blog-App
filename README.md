@@ -1,19 +1,18 @@
 <div align="center">
 
 <h1>📝 BlogWave App</h1>
-<p><strong>Full-Featured Blog Platform — REST API Backend</strong></p>
+<p><strong>Simple Blog Platform — REST API Backend</strong></p>
 
 ![Status](https://img.shields.io/badge/Status-In_Progress-f59e0b?style=for-the-badge)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![MySQL2](https://img.shields.io/badge/MySQL2-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Sequelize](https://img.shields.io/badge/Sequelize-2D6A9F?style=for-the-badge&logo=sequelize&logoColor=white)
+![MySQL2](https://img.shields.io/badge/MySQL2-00758F?style=for-the-badge&logo=mysql&logoColor=white)
 
 <br/>
 
-> A secure, scalable backend system for a full-featured blog platform.  
-> Users can create and manage posts, comment, like, and interact — with full auth, role-based access, and hardened API security.
+> A simple and clean backend system for a blog platform.  
+> Users can register, log in, and manage their profiles — built with Node.js, Express.js, and MySQL2.
 
 </div>
 
@@ -26,20 +25,18 @@
 - [Features](#-features)
 - [Project Structure](#%EF%B8%8F-project-structure)
 - [API Documentation](#-api-documentation)
-- [Author](#%E2%80%8D-author)
+- [Author](#-author)
 
 ---
 
 ## 🧠 Overview
 
-BlogWave is a content-driven blog platform where users can publish articles, engage with posts through comments and likes, and manage their own content. This repository contains the **full backend API** built with Node.js, Express.js, and MySQL via Sequelize ORM — featuring a security-first, layered architecture.
+BlogWave is a simple blog platform where users can register, log in, and manage their profiles. This repository contains the **backend API** built with Node.js, Express.js, and MySQL using the MySQL2 driver for direct SQL queries.
 
 **Core concepts:**
-- Users register, verify their email via OTP, and get a personal profile
-- Authenticated users can create, update, and delete their own posts
-- Posts can be organized by categories and tags
-- Anyone can read posts; interactions (comments, likes) require authentication
-- Admins can moderate content and manage users
+- Users register and log in with hashed passwords
+- Users can view, update, search, and delete profiles
+- Blog post management coming in the next phase
 
 ---
 
@@ -92,8 +89,8 @@ BlogWave is a content-driven blog platform where users can publish articles, eng
 ### ✔️ Completed
 
 - [x] Folder structure & project setup
-- [x] MySQL database connection via Sequelize
-- [x] Models & associations — User, Post, Comment, Category, Tag, Like
+- [x] MySQL database connection via **MySQL2**
+- [x] User model — `users` table with `u_id`, `u_fname`, `u_mname`, `u_lname`, `u_email`, `u_password`, `u_gender`, `u_DOB`, `u_confirmEmail`, `u_createdAt`, `u_updatedAt`
 - [x] Sign Up & Login endpoints
 - [x] Global error handling middleware
 - [x] Environment variables setup (`dotenv`)
@@ -124,18 +121,17 @@ export const comparePassword = ({
 
 </details>
 
+- [x] User CRUD — get profile, search, update, delete
+- [x] Blog model — `blogs` table with `b_id`, `b_title`, `b_content`, `b_createdAt`, `b_updatedAt`, `b_author_id` (FK → `users.u_id` ON UPDATE CASCADE ON DELETE CASCADE)
+- [x] Blog endpoints — create blog, get all blogs by user
+
 ---
 
-### 🔜 In Progress / Upcoming
+### 🔜 Upcoming
 
-- [ ] Create / update / delete posts
-- [ ] Categories & tags management
-- [ ] Comments — add, edit, delete, nested replies
-- [ ] Likes — toggle like on posts and comments
-- [ ] Public blog feed with search & pagination
-- [ ] Public author profile page
-- [ ] Soft delete for posts
-- [ ] Admin dashboard — manage users, posts, comments
+- [ ] Migrate from MySQL2 raw queries → **Sequelize ORM**
+- [ ] Update blog, delete blog
+- [ ] Get single blog by ID
 
 ---
 
@@ -148,34 +144,19 @@ BLOGWAVE-APP/
 │   │   ├── auth/
 │   │   │   ├── auth.controller.js
 │   │   │   └── auth.routes.js
-│   │   ├── post/
-│   │   │   ├── post.controller.js
-│   │   │   └── post.routes.js
-│   │   ├── comment/
-│   │   │   ├── comment.controller.js
-│   │   │   └── comment.routes.js
-│   │   ├── category/
-│   │   │   ├── category.controller.js
-│   │   │   └── category.routes.js
-│   │   └── user/
-│   │       ├── user.controller.js
-│   │       └── user.routes.js
+│   │   ├── user/
+│   │   │   ├── user.controller.js
+│   │   │   └── user.routes.js
+│   │   └── blog/
+│   │       ├── blog.controller.js      (createBlog, getUserBlogs)
+│   │       └── blog.routes.js
 │   ├── DB/
-│   │   ├── models/
-│   │   │   ├── user.model.js
-│   │   │   ├── blog.model.js
-│   │   │   ├── comment.model.js
-│   │   │   ├── category.model.js
-│   │   │   ├── like.model.js
 │   │   └── db.connection.js
-│   ├── middleware/
-│   │   ├── authentication.middleware.js
-│   │   └── authorization.middleware.js
 │   └── utils/
 │       └── security/
-│           ├── hash.security.js      (bcrypt generateHash + compareHash)
-│   ├── app.controller.js             (main app setup / route mounting)
-│   └── index.js                      (entry point)
+│           └── hash.security.js        (bcrypt hashPassword + comparePassword)
+│   ├── app.controller.js               (main app setup / route mounting)
+│   └── index.js                        (entry point)
 ├── .gitignore
 ├── package.json
 ├── package-lock.json
@@ -366,7 +347,7 @@ export const login = (req, res, next) => {
 
 ---
 
-## 👤 User — `/user` &nbsp; 🔒 *Protected*
+## 👤 User — `/user`
 
 <details>
 <summary><strong>Routes</strong> — <em>user.routes.js</em></summary>
@@ -378,7 +359,10 @@ import express from "express";
 import * as userController from "./user.controller.js";
 const router = express.Router();
 
-router.get("/", userController.getAllUsers);
+router.get("/search", userController.searchUser);
+router.get("/:id", userController.getUserProfile);
+router.patch("/:id", userController.updateUser);
+router.delete("/:id", userController.deleteUser);
 
 export default router;
 ```
@@ -388,95 +372,58 @@ export default router;
 ---
 
 <details>
-<summary><code>GET</code> &nbsp; <strong>/user</strong> — Get current user profile</summary>
+<summary><code>GET</code> &nbsp; <strong>/user/:id</strong> — Get user profile by ID</summary>
 
 <br/>
 
-> 🔒 Protected — pass access token in `Authorization` header using `Bearer` (user) or `Admin` prefix.
+> 🔓 Public — no authentication required.
 
-**Headers:**
+**URL Params:**
 ```
-Authorization: Bearer <access_token>
+GET http://localhost:5000/user/1
 ```
 
 **Response `200` — Success:**
 ```json
 {
-  "message": "Done",
-  "data": {
-    "id": 1,
-    "fullName": "Ahmed Essam",
-    "email": "a1@example.com",
-    "gender": "male",
-    "bio": "Software engineer & blogger",
-    "avatar": "https://cdn.example.com/avatars/ahmed.jpg",
-    "role": "user",
-    "postsCount": 12
+  "message": "User Found",
+  "user": {
+    "fullName": "Ziad Essam Hamdy",
+    "u_email": "a@gmail.com",
+    "age": 24
   }
 }
-```
-
-**Response `401` — Missing token parts:**
-```json
-{ "err_message": "Missing-Token-Parts" }
-```
-
-**Response `400` — Invalid token:**
-```json
-{ "err_message": "Invalid-Token" }
 ```
 
 **Response `404` — User not found:**
 ```json
-{ "err_message": "User Not Found" }
+{ "message": "User Not Found" }
 ```
 
-<details>
-<summary><em>Controller code</em></summary>
-
-```javascript
-export const getProfile = asyncHandler(async (req, res, next) => {
-  return successResponse({ res, data: req.user });
-});
-```
-
-</details>
-
-</details>
-
----
-
-<details>
-<summary><code>GET</code> &nbsp; <strong>/user/refresh-token</strong> — Get new access & refresh tokens</summary>
-
-<br/>
-
-> 🔒 Protected — pass **refresh token** in `Authorization` header.
-
-**Headers:**
-```
-Authorization: Bearer <refresh_token>
-```
-
-**Response `200` — Success:**
+**Response `500` — Database error:**
 ```json
-{
-  "message": "Done",
-  "data": {
-    "access_token": "<new_jwt_access_token>",
-    "refresh_token": "<new_jwt_refresh_token>"
-  }
-}
+{ "message": "error in sql query", "err": "<error details>" }
 ```
 
 <details>
-<summary><em>Controller code</em></summary>
+<summary><em>Controller code — MySQL2</em></summary>
 
 ```javascript
-export const getNewLoginCredentials = asyncHandler(async (req, res, next) => {
-  const newCredentials = await generateLoginCredentials({ user: req.user });
-  return successResponse({ res, status: 200, data: newCredentials });
-});
+export const getUserProfile = (req, res, next) => {
+  const sql = `SELECT CONCAT(u_fname, ' ', u_mname, ' ', u_lname) AS fullName,
+    u_email,
+    TIMESTAMPDIFF(YEAR, u_DOB, NOW()) AS age 
+    FROM users 
+    WHERE u_id = ?`;
+  connection.execute(sql, [req.params.id], (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: "error in sql query", err });
+    }
+    return data.length
+      ? res.status(200).json({ message: "User Found", user: data[0] })
+      : res.status(404).json({ message: "User Not Found" });
+  });
+};
 ```
 
 </details>
@@ -486,178 +433,222 @@ export const getNewLoginCredentials = asyncHandler(async (req, res, next) => {
 ---
 
 <details>
-<summary><code>PUT</code> &nbsp; <strong>/user</strong> — Update profile (name, bio, avatar) &nbsp; ⬜ <em>Not yet implemented</em></summary>
+<summary><code>GET</code> &nbsp; <strong>/user/search</strong> — Search users by first name</summary>
 
 <br/>
 
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-<details>
-<summary><code>GET</code> &nbsp; <strong>/user/:username</strong> — Get public author profile &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Displays the author's public profile with their published posts*  
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-## 📄 Posts — `/post` &nbsp; 🔒 *Protected (write)*
-
-<details>
-<summary><strong>Routes</strong> — <em>post.routes.js</em></summary>
-
-<br/>
-
-```javascript
-import express from "express";
-import * as postController from "./post.controller.js";
-import { authentication } from "../middleware/authentication.middleware.js";
-const router = express.Router();
-
-router.get("/", postController.getAllPosts);                                          // public
-router.get("/:id", postController.getPostById);                                      // public
-router.post("/", authentication(), postController.createPost);                       // protected
-router.put("/:id", authentication(), postController.updatePost);                     // protected
-router.delete("/:id", authentication(), postController.deletePost);                  // protected
-
-export default router;
-```
-
-</details>
-
----
-
-<details>
-<summary><code>GET</code> &nbsp; <strong>/post</strong> — Get all posts (feed) with pagination & search</summary>
-
-<br/>
+> 🔓 Public — no authentication required.
 
 **Query Params:**
 ```
-?page=1&limit=10&search=nodejs&categoryId=2&tagId=5
+GET http://localhost:5000/user/search?searchKey=a
 ```
 
 **Response `200` — Success:**
 ```json
 {
   "message": "Done",
-  "data": {
-    "posts": [
-      {
-        "id": 1,
-        "title": "Getting Started with Sequelize",
-        "slug": "getting-started-with-sequelize",
-        "excerpt": "A beginner-friendly guide...",
-        "coverImage": "https://cdn.example.com/posts/cover.jpg",
-        "author": { "id": 1, "fullName": "Ahmed Essam", "avatar": "..." },
-        "category": { "id": 2, "name": "Backend" },
-        "likesCount": 42,
-        "commentsCount": 7,
-        "createdAt": "2025-01-15T10:30:00.000Z"
-      }
-    ],
-    "total": 100,
-    "page": 1,
-    "totalPages": 10
-  }
+  "data": [
+    {
+      "u_id": 1,
+      "u_email": "a@gmail.com",
+      "u_gender": "male",
+      "u_DOB": "2001-11-24T22:00:00.000Z",
+      "u_fname": "Ziad",
+      "u_mname": "Essam",
+      "u_lname": "Hamdy",
+      "u_confirmEmail": 0,
+      "u_createdAt": "2026-04-30T02:18:32.000Z",
+      "u_updatedAt": "2026-05-01T03:10:24.000Z"
+    }
+  ]
 }
 ```
+
+**Response `404` — No users found:**
+```json
+{ "message": "User Not Found" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "error in sql query", "err": "<error details>" }
+```
+
+<details>
+<summary><em>Controller code — MySQL2</em></summary>
+
+```javascript
+export const searchUser = (req, res, next) => {
+  const { searchKey } = req.query;
+  const sql = "SELECT * FROM users WHERE u_fname like ?";
+  connection.execute(sql, ["%" + searchKey + "%"], (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: "error in sql query", err });
+    }
+    return data.length
+      ? res.status(200).json({ message: "Done", data })
+      : res.status(404).json({ message: "User Not Found" });
+  });
+};
+```
+
+</details>
 
 </details>
 
 ---
 
 <details>
-<summary><code>GET</code> &nbsp; <strong>/post/:id</strong> — Get a single post by ID</summary>
+<summary><code>PATCH</code> &nbsp; <strong>/user/:id</strong> — Update user first name and date of birth</summary>
 
 <br/>
+
+> 🔓 Public — no authentication required.
+
+**URL Params:**
+```
+PATCH http://localhost:5000/user/1
+```
+
+**Request Body:**
+```json
+{
+  "firstName": "Eyad",
+  "DOB": "2002-11-25"
+}
+```
 
 **Response `200` — Success:**
 ```json
 {
-  "message": "Done",
+  "message": "User Updated Successfully",
   "data": {
-    "id": 1,
-    "title": "Getting Started with Sequelize",
-    "slug": "getting-started-with-sequelize",
-    "content": "Full markdown content...",
-    "coverImage": "https://cdn.example.com/posts/cover.jpg",
-    "author": { "id": 1, "fullName": "Ahmed Essam" },
-    "category": { "id": 2, "name": "Backend" },
-    "tags": [{ "id": 5, "name": "nodejs" }, { "id": 6, "name": "mysql" }],
-    "likesCount": 42,
-    "commentsCount": 7,
-    "createdAt": "2025-01-15T10:30:00.000Z"
+    "fieldCount": 0,
+    "affectedRows": 1,
+    "insertId": 0,
+    "info": "Rows matched: 1  Changed: 1  Warnings: 0",
+    "serverStatus": 2,
+    "warningStatus": 0,
+    "changedRows": 1
   }
 }
 ```
 
-**Response `404` — Post not found:**
+**Response `400` — Missing required fields:**
 ```json
-{ "err_message": "Post not found" }
+{ "message": "Invalid Data" }
+```
+
+**Response `404` — User not found:**
+```json
+{ "message": "User Not Found" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "error in sql query", "err": "<error details>" }
+```
+
+<details>
+<summary><em>Controller code — MySQL2</em></summary>
+
+```javascript
+export const updateUser = (req, res, next) => {
+  const { id } = req.params;
+  const { firstName, DOB } = req.body;
+  if (!firstName || !DOB)
+    return res.status(400).json({ message: "Invalid Data" });
+  const sql = `UPDATE users 
+    SET u_fname = ?, u_DOB = ?
+    WHERE u_id = ?`;
+  connection.execute(sql, [firstName, DOB, id], (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: "error in sql query", err });
+    }
+    return data.affectedRows
+      ? res.status(200).json({ message: "User Updated Successfully", data })
+      : res.status(404).json({ message: "User Not Found" });
+  });
+};
 ```
 
 </details>
 
----
-
-<details>
-<summary><code>POST</code> &nbsp; <strong>/post</strong> — Create a new post &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add request body, success response, and error cases when implemented*
-
 </details>
 
 ---
 
 <details>
-<summary><code>PUT</code> &nbsp; <strong>/post/:id</strong> — Update a post &nbsp; ⬜ <em>Not yet implemented</em></summary>
+<summary><code>DELETE</code> &nbsp; <strong>/user/:id</strong> — Delete a user by ID</summary>
 
 <br/>
 
-> ⬜ *Add details when implemented*
+> 🔓 Public — no authentication required.
+
+**URL Params:**
+```
+DELETE http://localhost:5000/user/3
+```
+
+**Response `204` — Deleted successfully:**
+```
+(no content)
+```
+
+**Response `400` — Missing ID param:**
+```json
+{ "message": "Invalid Data" }
+```
+
+**Response `404` — User not found:**
+```json
+{ "message": "User Not Found" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "error in sql query", "err": "<error details>" }
+```
+
+<details>
+<summary><em>Controller code — MySQL2</em></summary>
+
+```javascript
+export const deleteUser = (req, res, next) => {
+  if (!req.params.id) return res.status(400).json({ message: "Invalid Data" });
+  const sql = `DELETE FROM users WHERE u_id = ?`;
+  connection.execute(sql, [req.params.id], (err, data) => {
+    if (err) {
+      return res.status(500).json({ message: "error in sql query", err });
+    }
+    return data.affectedRows
+      ? res.status(204).json({})
+      : res.status(404).json({ message: "User Not Found" });
+  });
+};
+```
+
+</details>
 
 </details>
 
 ---
 
-<details>
-<summary><code>DELETE</code> &nbsp; <strong>/post/:id</strong> — Delete a post &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-## 💬 Comments — `/comment` &nbsp; 🔒 *Protected*
+## 📄 Blog — `/blog`
 
 <details>
-<summary><strong>Routes</strong> — <em>comment.routes.js</em></summary>
+<summary><strong>Routes</strong> — <em>blog.routes.js</em></summary>
 
 <br/>
 
 ```javascript
 import express from "express";
-import * as commentController from "./comment.controller.js";
-import { authentication } from "../middleware/authentication.middleware.js";
+import * as blogController from "./blog.controller.js";
 const router = express.Router();
 
-router.get("/post/:postId", commentController.getPostComments);                           // public
-router.post("/post/:postId", authentication(), commentController.addComment);             // protected
-router.put("/:id", authentication(), commentController.updateComment);                    // protected
-router.delete("/:id", authentication(), commentController.deleteComment);                 // protected
+router.post("/", blogController.createBlog);
+router.get("/user/:id", blogController.getUserBlogs);
 
 export default router;
 ```
@@ -667,60 +658,152 @@ export default router;
 ---
 
 <details>
-<summary><code>GET</code> &nbsp; <strong>/comment/post/:postId</strong> — Get all comments for a post</summary>
+<summary><code>POST</code> &nbsp; <strong>/blog</strong> — Create a new blog post</summary>
 
 <br/>
+
+> 🔓 Public — no authentication required.
+
+**Request Body:**
+```json
+{
+  "title": "Instagram",
+  "content": "this post i wrote",
+  "author_id": 4
+}
+```
+
+**Response `201` — Success:**
+```json
+{
+  "message": "Blog Created Successfully"
+}
+```
+
+**Response `400` — Missing required fields:**
+```json
+{ "message": "Invalid Data" }
+```
+
+**Response `404` — Author user not found:**
+```json
+{ "message": "User Not Found" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "Error in SQL", "err": "<error details>" }
+```
+
+<details>
+<summary><em>Controller code — MySQL2</em></summary>
+
+```javascript
+export const createBlog = (req, res, next) => {
+  const { title, content, author_id } = req.body;
+  if (!title || !content || !author_id)
+    return res.status(400).json({ message: "Invalid Data" });
+  const userQuery = `SELECT * FROM users WHERE u_id = ?`;
+  const BlogQuery = `INSERT INTO blogs (b_title, b_content, b_author_id) VALUES (?, ?, ?)`;
+  connection.execute(userQuery, [author_id], (err, data) => {
+    if (err) return res.status(500).json({ message: "Error in SQL", err });
+    if (!data.length)
+      return res.status(404).json({ message: "User Not Found" });
+    connection.execute(BlogQuery, [title, content, author_id], (err, data) => {
+      if (err) return res.status(500).json({ message: "Error in SQL", err });
+      return res.status(201).json({ message: "Blog Created Successfully" });
+    });
+  });
+};
+```
+
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><code>GET</code> &nbsp; <strong>/blog/user/:id</strong> — Get all blogs by a user</summary>
+
+<br/>
+
+> 🔓 Public — no authentication required.
+
+**URL Params:**
+```
+GET http://localhost:5000/blog/user/4
+```
 
 **Response `200` — Success:**
 ```json
 {
   "message": "Done",
-  "data": {
-    "comments": [
-      {
-        "id": 1,
-        "content": "Great article!",
-        "author": { "id": 2, "fullName": "Sara Ali", "avatar": "..." },
-        "createdAt": "2025-01-16T08:00:00.000Z"
-      }
-    ],
-    "total": 7
-  }
+  "data": [
+    {
+      "b_id": 2,
+      "b_title": "Instagram",
+      "b_content": "this post i wrote",
+      "b_createdAt": "2026-05-01T03:55:21.000Z",
+      "b_updatedAt": "2026-05-01T03:55:21.000Z",
+      "b_author_id": 4
+    },
+    {
+      "b_id": 3,
+      "b_title": "Instagram",
+      "b_content": "this post i wrote",
+      "b_createdAt": "2026-05-01T03:59:40.000Z",
+      "b_updatedAt": "2026-05-01T03:59:40.000Z",
+      "b_author_id": 4
+    }
+  ]
 }
 ```
 
-</details>
+**Response `400` — Missing ID param:**
+```json
+{ "message": "Invalid Data" }
+```
 
----
+**Response `404` — User not found:**
+```json
+{ "message": "User Not Found" }
+```
 
-<details>
-<summary><code>POST</code> &nbsp; <strong>/comment/post/:postId</strong> — Add a comment &nbsp; ⬜ <em>Not yet implemented</em></summary>
+**Response `404` — User has no blogs:**
+```json
+{ "message": "User Does not have blogs" }
+```
 
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
-
-<details>
-<summary><code>PUT</code> &nbsp; <strong>/comment/:id</strong> — Edit a comment &nbsp; ⬜ <em>Not yet implemented</em></summary>
-
-<br/>
-
-> ⬜ *Add details when implemented*
-
-</details>
-
----
+**Response `500` — Database error:**
+```json
+{ "message": "Error in SQL", "err": "<error details>" }
+```
 
 <details>
-<summary><code>DELETE</code> &nbsp; <strong>/comment/:id</strong> — Delete a comment &nbsp; ⬜ <em>Not yet implemented</em></summary>
+<summary><em>Controller code — MySQL2</em></summary>
 
-<br/>
+```javascript
+export const getUserBlogs = (req, res, next) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ message: "Invalid Data" });
+  const userQuery = `SELECT * FROM users WHERE u_id = ?`;
+  const BlogQuery = `SELECT * FROM blogs WHERE b_author_id = ?`;
+  connection.execute(userQuery, [id], (err, data) => {
+    if (err) return res.status(500).json({ message: "Error in SQL", err });
+    if (!data.length)
+      return res.status(404).json({ message: "User Not Found" });
+    connection.execute(BlogQuery, [id], (err, data) => {
+      if (err) return res.status(500).json({ message: "Error in SQL", err });
+      if (!data.length)
+        return res.status(404).json({ message: "User Does not have blogs" });
+      return res.status(200).json({ message: "Done", data });
+    });
+  });
+};
+```
 
-> ⬜ *Add details when implemented*
+</details>
 
 </details>
 
