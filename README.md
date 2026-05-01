@@ -25,7 +25,7 @@
 - [Features](#-features)
 - [Project Structure](#%EF%B8%8F-project-structure)
 - [API Documentation](#-api-documentation)
-- [Author](#-author)
+- [Author](#%E2%80%8D-author)
 
 ---
 
