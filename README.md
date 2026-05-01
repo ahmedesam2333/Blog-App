@@ -122,15 +122,16 @@ export const comparePassword = ({
 </details>
 
 - [x] User CRUD — get profile, search, update, delete
+- [x] Blog model — `blogs` table with `b_id`, `b_title`, `b_content`, `b_createdAt`, `b_updatedAt`, `b_author_id` (FK → `users.u_id` ON UPDATE CASCADE ON DELETE CASCADE)
+- [x] Blog endpoints — create blog, get all blogs by user
 
 ---
 
 ### 🔜 Upcoming
 
-- [ ] Blog posts CRUD — create, read, update, delete
 - [ ] Migrate from MySQL2 raw queries → **Sequelize ORM**
-- [ ] Blog model & User-Blog association via Sequelize
-- [ ] Get all blogs by user
+- [ ] Update blog, delete blog
+- [ ] Get single blog by ID
 
 ---
 
@@ -147,8 +148,8 @@ BLOGWAVE-APP/
 │   │   │   ├── user.controller.js
 │   │   │   └── user.routes.js
 │   │   └── blog/
-│   │       ├── blog.controller.js      (coming soon)
-│   │       └── blog.routes.js          (coming soon)
+│   │       ├── blog.controller.js      (createBlog, getUserBlogs)
+│   │       └── blog.routes.js
 │   ├── DB/
 │   │   └── db.connection.js
 │   └── utils/
@@ -634,9 +635,177 @@ export const deleteUser = (req, res, next) => {
 
 ---
 
-## 📄 Blog — `/blog` &nbsp; 🔜 *Coming Soon*
+## 📄 Blog — `/blog`
 
-> Blog post endpoints will be added in the next phase after migrating to Sequelize ORM.
+<details>
+<summary><strong>Routes</strong> — <em>blog.routes.js</em></summary>
+
+<br/>
+
+```javascript
+import express from "express";
+import * as blogController from "./blog.controller.js";
+const router = express.Router();
+
+router.post("/", blogController.createBlog);
+router.get("/user/:id", blogController.getUserBlogs);
+
+export default router;
+```
+
+</details>
+
+---
+
+<details>
+<summary><code>POST</code> &nbsp; <strong>/blog</strong> — Create a new blog post</summary>
+
+<br/>
+
+> 🔓 Public — no authentication required.
+
+**Request Body:**
+```json
+{
+  "title": "Instagram",
+  "content": "this post i wrote",
+  "author_id": 4
+}
+```
+
+**Response `201` — Success:**
+```json
+{
+  "message": "Blog Created Successfully"
+}
+```
+
+**Response `400` — Missing required fields:**
+```json
+{ "message": "Invalid Data" }
+```
+
+**Response `404` — Author user not found:**
+```json
+{ "message": "User Not Found" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "Error in SQL", "err": "<error details>" }
+```
+
+<details>
+<summary><em>Controller code — MySQL2</em></summary>
+
+```javascript
+export const createBlog = (req, res, next) => {
+  const { title, content, author_id } = req.body;
+  if (!title || !content || !author_id)
+    return res.status(400).json({ message: "Invalid Data" });
+  const userQuery = `SELECT * FROM users WHERE u_id = ?`;
+  const BlogQuery = `INSERT INTO blogs (b_title, b_content, b_author_id) VALUES (?, ?, ?)`;
+  connection.execute(userQuery, [author_id], (err, data) => {
+    if (err) return res.status(500).json({ message: "Error in SQL", err });
+    if (!data.length)
+      return res.status(404).json({ message: "User Not Found" });
+    connection.execute(BlogQuery, [title, content, author_id], (err, data) => {
+      if (err) return res.status(500).json({ message: "Error in SQL", err });
+      return res.status(201).json({ message: "Blog Created Successfully" });
+    });
+  });
+};
+```
+
+</details>
+
+</details>
+
+---
+
+<details>
+<summary><code>GET</code> &nbsp; <strong>/blog/user/:id</strong> — Get all blogs by a user</summary>
+
+<br/>
+
+> 🔓 Public — no authentication required.
+
+**URL Params:**
+```
+GET http://localhost:5000/blog/user/4
+```
+
+**Response `200` — Success:**
+```json
+{
+  "message": "Done",
+  "data": [
+    {
+      "b_id": 2,
+      "b_title": "Instagram",
+      "b_content": "this post i wrote",
+      "b_createdAt": "2026-05-01T03:55:21.000Z",
+      "b_updatedAt": "2026-05-01T03:55:21.000Z",
+      "b_author_id": 4
+    },
+    {
+      "b_id": 3,
+      "b_title": "Instagram",
+      "b_content": "this post i wrote",
+      "b_createdAt": "2026-05-01T03:59:40.000Z",
+      "b_updatedAt": "2026-05-01T03:59:40.000Z",
+      "b_author_id": 4
+    }
+  ]
+}
+```
+
+**Response `400` — Missing ID param:**
+```json
+{ "message": "Invalid Data" }
+```
+
+**Response `404` — User not found:**
+```json
+{ "message": "User Not Found" }
+```
+
+**Response `404` — User has no blogs:**
+```json
+{ "message": "User Does not have blogs" }
+```
+
+**Response `500` — Database error:**
+```json
+{ "message": "Error in SQL", "err": "<error details>" }
+```
+
+<details>
+<summary><em>Controller code — MySQL2</em></summary>
+
+```javascript
+export const getUserBlogs = (req, res, next) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ message: "Invalid Data" });
+  const userQuery = `SELECT * FROM users WHERE u_id = ?`;
+  const BlogQuery = `SELECT * FROM blogs WHERE b_author_id = ?`;
+  connection.execute(userQuery, [id], (err, data) => {
+    if (err) return res.status(500).json({ message: "Error in SQL", err });
+    if (!data.length)
+      return res.status(404).json({ message: "User Not Found" });
+    connection.execute(BlogQuery, [id], (err, data) => {
+      if (err) return res.status(500).json({ message: "Error in SQL", err });
+      if (!data.length)
+        return res.status(404).json({ message: "User Does not have blogs" });
+      return res.status(200).json({ message: "Done", data });
+    });
+  });
+};
+```
+
+</details>
+
+</details>
 
 ---
 
