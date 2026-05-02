@@ -13,7 +13,7 @@
 <br/>
 
 > A backend system for a blog platform where users can register, log in, manage their profiles, and create & manage their blog posts.  
-> Currently powered by MySQL2 with raw SQL queries — migrating to Sequelize ORM in the next phase.
+> Built with MySQL2 for raw SQL queries (auth & user modules) and Sequelize ORM (user model layer) — both used actively in the project.
 
 </div>
 
@@ -32,14 +32,15 @@
 
 ## 🧠 Overview
 
-BlogWave is a blog platform where users can register, log in, manage their profiles, and create & manage their own blog posts. This repository contains the **backend API** built with Node.js, Express.js, and MySQL — currently using the MySQL2 driver for direct SQL queries, with a planned migration to **Sequelize ORM** in the next phase for cleaner model-based data access and associations.
+BlogWave is a blog platform where users can register, log in, manage their profiles, and create & manage their own blog posts. This repository contains the **backend API** built with Node.js, Express.js, and MySQL — using **both MySQL2 and Sequelize ORM** actively in the project. MySQL2 handles raw SQL queries in the auth and blog modules, while Sequelize ORM is used for the User model layer with built-in and custom validators, virtual fields, and getter/setter hooks.
 
 **Core concepts:**
 - Users register and log in with bcrypt-hashed passwords
 - Users can view, search, update, and delete their profiles
-- Authenticated users can create blog posts and retrieve all blogs by a specific user
+- Users can create blog posts and retrieve all blogs by a specific user
 - Relational schema with FK constraints — deleting a user cascades to their blogs
-- Sequelize ORM integration coming next for models, associations, and query abstraction
+- Sequelize `UserModel` features a `VIRTUAL` `fullName` field with getter/setter, built-in validators, custom model-level validators, and mapped column names via `field`
+- Uniform API responses via centralized `successResponse` and `errorHandling` utilities with Sequelize-aware error type switching
 
 ---
 
@@ -92,10 +93,156 @@ BlogWave is a blog platform where users can register, log in, manage their profi
 ### ✔️ Completed
 
 - [x] Folder structure & project setup
-- [x] MySQL database connection via **MySQL2**
-- [x] User model — `users` table with `u_id`, `u_fname`, `u_mname`, `u_lname`, `u_email`, `u_password`, `u_gender`, `u_DOB`, `u_confirmEmail`, `u_createdAt`, `u_updatedAt`
+- [x] MySQL database connection via **MySQL2** and **Sequelize ORM**
+- [x] User model via Sequelize — `UserModel` with built-in validators, custom model-level validator, and `VIRTUAL` `fullName` field with getter & setter (`src/DB/models/user.model.js`)
+
+<details>
+<summary><strong>🗃️ UserModel — Sequelize</strong> — <em>Click to see implementation</em></summary>
+
+<br/>
+
+```javascript
+import { sequelize } from "../db.connection.js";
+import { DataTypes } from "sequelize";
+
+export const UserModel = sequelize.define(
+  "User",
+  {
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "U_firstName",
+      validate: {
+        notEmpty: { msg: "PLease fill required field First Name" },
+        len: { msg: "min length is 2 and max length is 20", args: [2, 20] },
+      },
+    },
+    middleName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "U_middleName",
+      validate: {
+        notEmpty: { msg: "PLease fill required field Middle Name" },
+        len: { msg: "min length is 2 and max length is 20", args: [2, 20] },
+      },
+    },
+    lastName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "U_lastName",
+      validate: {
+        notEmpty: { msg: "PLease fill required field Last Name" },
+        len: { msg: "min length is 2 and max length is 20", args: [2, 20] },
+      },
+    },
+    fullName: {
+      type: DataTypes.VIRTUAL,
+      set(value) {
+        const [firstName, middleName, lastName] =
+          value?.trim().split(" ") || [];
+        this.setDataValue("firstName", firstName);
+        this.setDataValue("middleName", middleName);
+        this.setDataValue("lastName", lastName);
+      },
+      get() {
+        return (
+          this.getDataValue("firstName") +
+          " " +
+          this.getDataValue("middleName") +
+          " " +
+          this.getDataValue("lastName")
+        );
+      },
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      field: "U_email",
+      validate: {
+        notEmpty: { msg: "PLease fill required field Email" },
+        isEmail: { msg: "Please write correct Email" },
+      },
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "U_password",
+      validate: {
+        notEmpty: { msg: "PLease fill required field Password" },
+      },
+    },
+    DOB: {
+      type: DataTypes.DATE,
+      field: "U_DOB",
+    },
+    gender: {
+      type: DataTypes.ENUM("male", "female"),
+      defaultValue: "male",
+      field: "U_gender",
+    },
+    confirmEmail: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: "U_confirmEmail",
+    },
+  },
+  {
+    createdAt: "U_createdAt",
+    updatedAt: "U_updatedAt",
+    validate: {
+      checkGender() {
+        if (this.gender !== "male" && this.gender !== "female") {
+          throw new Error("Gender Must be either male or female");
+        }
+      },
+    },
+  }
+);
+```
+
+</details>
+
 - [x] Sign Up & Login endpoints
-- [x] Global error handling middleware
+- [x] Centralized response utilities — `successResponse` & `errorHandling` with Sequelize-aware error type switching (`src/utils/response.js`)
+
+<details>
+<summary><strong>📦 successResponse + errorHandling</strong> — <em>Click to see implementation</em></summary>
+
+<br/>
+
+```javascript
+export const errorHandling = async ({ res, error } = {}) => {
+  switch (error?.name) {
+    case "SequelizeValidationError":
+      return res.status(400).json({ message: "Validation Error", error });
+    case "SequelizeUniqueConstraintError":
+      return res.status(409).json({ message: "UniqueConstraintError", error });
+    default:
+      return res.status(500).json({
+        message: "Server Error",
+        err_message: error.message,
+        stack: error.stack,
+        error,
+      });
+  }
+};
+
+export const successResponse = async ({
+  res,
+  status = 200,
+  message = "Done",
+  data = {},
+} = {}) => {
+  return res.status(status).json({
+    message,
+    data,
+  });
+};
+```
+
+</details>
+
 - [x] Environment variables setup (`dotenv`)
 - [x] Hashing — `bcrypt` implementation for passwords (`src/utils/security/hash.security.js`)
 
@@ -132,9 +279,9 @@ export const comparePassword = ({
 
 ### 🔜 Upcoming
 
-- [ ] Migrate from MySQL2 raw queries → **Sequelize ORM**
 - [ ] Update blog, delete blog
 - [ ] Get single blog by ID
+- [ ] Migrate blog module to Sequelize ORM
 
 ---
 
@@ -154,8 +301,11 @@ BLOGWAVE-APP/
 │   │       ├── blog.controller.js      (createBlog, getUserBlogs)
 │   │       └── blog.routes.js
 │   ├── DB/
+│   │   ├── models/
+│   │   │   └── user.model.js           (Sequelize UserModel — virtual fullName, validators, field mapping)
 │   │   └── db.connection.js
 │   └── utils/
+│       ├── response.js                 (successResponse + errorHandling — Sequelize-aware error switching)
 │       └── security/
 │           └── hash.security.js        (bcrypt hashPassword + comparePassword)
 │   ├── app.controller.js               (main app setup / route mounting)
