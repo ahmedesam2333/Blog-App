@@ -1,5 +1,3 @@
-import { connection } from "../../app.controller.js";
-
 export const createBlog = (req, res, next) => {
   const { title, content, author_id } = req.body;
   if (!title || !content || !author_id)

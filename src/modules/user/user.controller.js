@@ -1,5 +1,3 @@
-import { connection } from "../../app.controller.js";
-
 export const getUserProfile = (req, res, next) => {
   const sql = `SELECT CONCAT(u_fname, ' ', u_mname, ' ', u_lname) AS fullName,u_email,TIMESTAMPDIFF(YEAR, u_DOB, NOW()) AS age 
     FROM users 
