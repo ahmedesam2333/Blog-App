@@ -13,7 +13,7 @@
 <br/>
 
 > A backend system for a blog platform where users can register, log in, manage their profiles, and create & manage their blog posts.  
-> Built with MySQL2 for raw SQL queries (auth & user modules) and Sequelize ORM (user model layer) — both used actively in the project.
+> Built with MySQL2 for raw SQL queries and Sequelize ORM - both used in the project.
 
 </div>
 
