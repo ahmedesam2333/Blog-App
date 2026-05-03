@@ -1,57 +1,117 @@
-export const getUserProfile = (req, res, next) => {
-  const sql = `SELECT CONCAT(u_fname, ' ', u_mname, ' ', u_lname) AS fullName,u_email,TIMESTAMPDIFF(YEAR, u_DOB, NOW()) AS age 
-    FROM users 
-    WHERE u_id = ?`;
-  connection.execute(sql, [req.params.id], (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: "error in sql query", err });
-    }
-    return data.length
-      ? res.status(200).json({ message: "User Found", user: data[0] })
-      : res.status(404).json({ message: "User Not Found" });
-  });
+import { BlogModel } from "../../DB/models/blog.model.js";
+import { UserModel } from "../../DB/models/user.model.js";
+import { successResponse, errorHandling } from "../../utils/response.js";
+import { Op } from "sequelize";
+
+export const getUserProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "ID required" });
+    const user = await UserModel.findByPk(id, {
+      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: BlogModel,
+          attributes: ["content", "title"],
+        },
+      ],
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return successResponse({ res, data: user });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
 };
 
-export const searchUser = (req, res, next) => {
-  const { searchKey } = req.query;
-  const sql = "SELECT * FROM users WHERE u_fname like ?";
-  connection.execute(sql, ["%" + searchKey + "%"], (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: "error in sql query", err });
-    }
-    return data.length
-      ? res.status(200).json({ message: "Done", data })
-      : res.status(404).json({ message: "User Not Found" });
-  });
+export const searchUser = async (req, res, next) => {
+  try {
+    const { search, page, size } = req.query;
+    if (!search || !page || !size)
+      return res.status(400).json({ message: "Please add required fields" });
+    const currentPage = parseInt(page < 1 ? 1 : page);
+    const users = await UserModel.findAndCountAll({
+      where: { firstName: { [Op.substring]: search } },
+      offset: parseInt((currentPage - 1) * size),
+      limit: parseInt(size < 1 ? 5 : size),
+    });
+    return res.status(200).json({
+      message: "Done",
+      pageSize: size,
+      pages: Math.ceil(users.count / size),
+      users,
+    });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
 };
 
-export const updateUser = (req, res, next) => {
-  const { id } = req.params;
-  const { firstName, DOB } = req.body;
-  if (!firstName || !DOB)
-    return res.status(400).json({ message: "Invalid Data" });
-  const sql = `update users 
-  set u_fname=? , u_DOB=?
-  where u_id =?`;
-  connection.execute(sql, [firstName, DOB, id], (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: "error in sql query", err });
-    }
-    return data.affectedRows
-      ? res.status(200).json({ message: "User Updated Successfully", data })
-      : res.status(404).json({ message: "User Not Found" });
-  });
+export const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "ID required" });
+    const user = await UserModel.update(req.body, {
+      where: { id },
+    });
+    console.log(user);
+    return user[0]
+      ? successResponse({ res, message: "User Updated" })
+      : res.status(400).json({ message: "Failed to Update" });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
 };
 
-export const deleteUser = (req, res, next) => {
-  if (!req.params.id) return res.status(400).json({ message: "Invalid Data" });
-  const sql = `delete from users where u_id =?`;
-  connection.execute(sql, [req.params.id], (err, data) => {
-    if (err) {
-      return res.status(500).json({ message: "error in sql query", err });
-    }
-    return data.affectedRows
-      ? res.status(204).json({})
-      : res.status(404).json({ message: "User Not Found" });
-  });
+export const restoreUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "ID required" });
+    const user = await UserModel.restore({
+      where: { id },
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return successResponse({ res, message: "User restored", status: 200 });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
+};
+
+export const truncateTable = async (req, res, next) => {
+  try {
+    const table = await tableModel.destroy({
+      truncate: true,
+    });
+    if (!user) return res.status(404).json({ message: "Table is empty" });
+    return successResponse({ res, status: 204 });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
+};
+
+export const freezeUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "ID required" });
+    const user = await UserModel.destroy({
+      where: { id },
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return successResponse({ res, status: 204 });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
+};
+
+export const hardDeleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: "ID required" });
+    const user = await UserModel.destroy({
+      where: { id },
+      force: true,
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return successResponse({ res, status: 204 });
+  } catch (error) {
+    errorHandling({ res, error });
+  }
 };

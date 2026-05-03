@@ -92,5 +92,6 @@ export const UserModel = sequelize.define(
         }
       },
     },
+    paranoid: true,
   }
 );

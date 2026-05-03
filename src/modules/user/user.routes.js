@@ -5,6 +5,9 @@ const router = express.Router();
 router.get("/search", userController.searchUser);
 router.get("/:id", userController.getUserProfile);
 router.patch("/:id", userController.updateUser);
-router.delete("/:id", userController.deleteUser);
+router.patch("/:id/restore", userController.restoreUser);
+router.delete("/truncate", userController.truncateTable);
+router.delete("/:id/freeze", userController.freezeUser);
+router.delete("/:id/hard", userController.hardDeleteUser);
 
 export default router;
